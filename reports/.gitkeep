@@ -1,0 +1,2 @@
+# Reports Directory
+Test reports are generated here at runtime. This file ensures the directory exists in git.

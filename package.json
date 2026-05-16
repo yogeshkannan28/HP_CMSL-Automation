@@ -1,0 +1,25 @@
+{
+  "name": "hp-cmsl-automation",
+  "version": "1.0.0",
+  "description": "HP CMSL PowerShell Test Automation Framework using Jest + POM pattern",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest --verbose --forceExit",
+    "test:bios": "jest --testPathPattern=tests/bios-device --verbose",
+    "test:softpaq": "jest --testPathPattern=tests/softpaq-mgmt --verbose",
+    "test:repo": "jest --testPathPattern=tests/softpaq-repo --verbose",
+    "test:firmware": "jest --testPathPattern=tests/firmware --verbose",
+    "test:consent": "jest --testPathPattern=tests/consent --verbose",
+    "test:notifications": "jest --testPathPattern=tests/notifications --verbose",
+    "test:docks": "jest --testPathPattern=tests/docks --verbose",
+    "test:retail": "jest --testPathPattern=tests/retail --verbose",
+    "preflight": "node src/helpers/platformGuard.js",
+    "test:report": "jest --verbose --json --outputFile=reports/test-results.json"
+  },
+  "keywords": ["hp", "cmsl", "automation", "testing", "powershell"],
+  "author": "yogeshkannan28",
+  "license": "MIT",
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+}

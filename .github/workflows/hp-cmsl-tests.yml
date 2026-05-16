@@ -1,0 +1,204 @@
+# ═══════════════════════════════════════════════════════════════
+# HP CMSL Test Automation — GitHub Actions Workflow
+# ═══════════════════════════════════════════════════════════════
+#
+# This workflow runs on SELF-HOSTED RUNNERS installed on real HP devices.
+# Each runner is labeled by its OS version (windows-10, windows-11).
+#
+# Setup per device:
+#   1. Install GitHub Actions Runner: https://github.com/actions/runner
+#   2. Register with labels: self-hosted, windows, windows-10 (or windows-11)
+#   3. Run as a service with Admin privileges
+#
+# Trigger: Push to main/develop, or manual dispatch
+# ═══════════════════════════════════════════════════════════════
+
+name: HP CMSL Tests
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      module:
+        description: 'Which module to test (all, bios, softpaq, firmware, consent, notifications, docks, retail, repo)'
+        required: false
+        default: 'all'
+      platform:
+        description: 'Target platform (all, win10, win11)'
+        required: false
+        default: 'all'
+
+# ─── Jobs ─────────────────────────────────────────────────────
+
+jobs:
+
+  # ═══════════════════════════════════════════════════════════
+  # Pre-flight: Validate environment on both platforms
+  # ═══════════════════════════════════════════════════════════
+
+  preflight-win10:
+    name: "🔍 Pre-flight — Windows 10"
+    runs-on: [self-hosted, windows, windows-10]
+    if: ${{ github.event.inputs.platform == 'all' || github.event.inputs.platform == 'win10' || github.event.inputs.platform == '' }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run pre-flight checks
+        run: npm run preflight
+
+  preflight-win11:
+    name: "🔍 Pre-flight — Windows 11"
+    runs-on: [self-hosted, windows, windows-11]
+    if: ${{ github.event.inputs.platform == 'all' || github.event.inputs.platform == 'win11' || github.event.inputs.platform == '' }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run pre-flight checks
+        run: npm run preflight
+
+  # ═══════════════════════════════════════════════════════════
+  # Test Execution — Windows 10
+  # ═══════════════════════════════════════════════════════════
+
+  test-win10:
+    name: "🧪 Tests — Windows 10"
+    runs-on: [self-hosted, windows, windows-10]
+    needs: preflight-win10
+    if: ${{ github.event.inputs.platform == 'all' || github.event.inputs.platform == 'win10' || github.event.inputs.platform == '' }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        module:
+          - bios
+          - softpaq
+          - repo
+          - firmware
+          - consent
+          - notifications
+          - docks
+          - retail
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: "Run ${{ matrix.module }} tests"
+        run: npm run test:${{ matrix.module }}
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: results-win10-${{ matrix.module }}
+          path: reports/
+          retention-days: 30
+
+  # ═══════════════════════════════════════════════════════════
+  # Test Execution — Windows 11
+  # ═══════════════════════════════════════════════════════════
+
+  test-win11:
+    name: "🧪 Tests — Windows 11"
+    runs-on: [self-hosted, windows, windows-11]
+    needs: preflight-win11
+    if: ${{ github.event.inputs.platform == 'all' || github.event.inputs.platform == 'win11' || github.event.inputs.platform == '' }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        module:
+          - bios
+          - softpaq
+          - repo
+          - firmware
+          - consent
+          - notifications
+          - docks
+          - retail
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: "Run ${{ matrix.module }} tests"
+        run: npm run test:${{ matrix.module }}
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: results-win11-${{ matrix.module }}
+          path: reports/
+          retention-days: 30
+
+  # ═══════════════════════════════════════════════════════════
+  # Summary Report
+  # ═══════════════════════════════════════════════════════════
+
+  report:
+    name: "📊 Test Summary"
+    runs-on: [self-hosted, windows]
+    needs: [test-win10, test-win11]
+    if: always()
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: all-results/
+
+      - name: Generate summary
+        run: |
+          echo "# 📊 HP CMSL Test Summary" >> $env:GITHUB_STEP_SUMMARY
+          echo "" >> $env:GITHUB_STEP_SUMMARY
+          echo "| Platform | Module | Status |" >> $env:GITHUB_STEP_SUMMARY
+          echo "|----------|--------|--------|" >> $env:GITHUB_STEP_SUMMARY
+          echo "| Win 10   | BIOS   | ${{ needs.test-win10.result }} |" >> $env:GITHUB_STEP_SUMMARY
+          echo "| Win 11   | BIOS   | ${{ needs.test-win11.result }} |" >> $env:GITHUB_STEP_SUMMARY
+          echo "" >> $env:GITHUB_STEP_SUMMARY
+          echo "**Triggered by:** ${{ github.actor }}" >> $env:GITHUB_STEP_SUMMARY
+          echo "**Commit:** ${{ github.sha }}" >> $env:GITHUB_STEP_SUMMARY
