@@ -18,9 +18,25 @@
 const { spawn } = require('child_process');
 const settings = require('../../config/settings');
 
+// Optional persistent PS pool (src/core/psPool.ts). When set (by
+// src/core/globalSetup.ts or the agent CLI), runCommand delegates to it
+// instead of spawning a fresh pwsh.exe per call. All 8 POM modules already
+// funnel through runCommand, so they get pooling for free with no changes.
+// Unset (plain unit tests, standalone preflight, etc.) → today's spawn
+// behavior, unchanged.
+let activePool = null;
+
+function setPool(pool) {
+  activePool = pool;
+}
+
+function getPool() {
+  return activePool;
+}
+
 /**
  * Execute a PowerShell command and return structured results.
- * 
+ *
  * @param {string} command - The PowerShell command to execute
  * @param {Object} options - Optional overrides
  * @param {number} options.timeout - Timeout in ms (default: settings.powershell.defaultTimeout)
@@ -28,6 +44,10 @@ const settings = require('../../config/settings');
  * @returns {Promise<{stdout: string, stderr: string, exitCode: number, success: boolean, duration: number}>}
  */
 async function runCommand(command, options = {}) {
+  if (activePool) {
+    return activePool.run(command, options);
+  }
+
   const {
     timeout = settings.powershell.defaultTimeout,
     shell = settings.powershell.executable,
@@ -173,4 +193,6 @@ module.exports = {
   runCommandJson,
   runCMSLCommand,
   runCMSLCommandJson,
+  setPool,
+  getPool,
 };

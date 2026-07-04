@@ -40,7 +40,10 @@
     "typescript": "^5.5.4"
   },
   "dependencies": {
+    "@langchain/core": "^0.3.40",
+    "@langchain/ollama": "^0.2.0",
     "@modelcontextprotocol/sdk": "^1.0.4",
+    "langchain": "^0.3.19",
     "proper-lockfile": "^4.1.2",
     "simple-git": "^3.25.0",
     "zod": "^3.23.8"

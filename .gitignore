@@ -5,6 +5,13 @@ node_modules/
 reports/*.json
 reports/*.html
 reports/test-repo/
+reports/agent-fixes/
+
+# Build output
+dist/
+
+# Cross-process hardware lock (runtime lockfile, not source)
+.locks/*.lock
 
 # IDE
 .vscode/

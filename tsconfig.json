@@ -6,6 +6,7 @@
     "lib": ["ES2022"],
     "strict": true,
     "esModuleInterop": true,
+    "allowJs": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
@@ -19,6 +20,6 @@
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["config/**/*.ts", "src/**/*.ts", "tests/**/*.ts", "*.ts"],
+  "include": ["config/**/*.ts", "src/**/*.ts", "src/modules/**/*.js", "tests/**/*.ts", "*.ts"],
   "exclude": ["node_modules", "dist"]
 }
